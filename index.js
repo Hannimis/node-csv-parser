@@ -9,7 +9,7 @@
 /**
  * 
  * @param {string} path to csv 
- * @returns {undefined}
+ * @returns {CSVParser} returns a CSVParser object
  */
 function CSVParser(path){
     
@@ -21,15 +21,12 @@ function CSVParser(path){
     const fs = require('fs');
     
     // Require readline, for the fs readstream and also the stdin stream.
-    const readline = require('readline')
+    const readline = require('readline');
     
-    // Convert data into JSON
-    this.JSON = function(keys, values){
-    
-    
-        return data;
-    }
-    
+    /**
+     * 
+     * @returns {json} Returns the CSV converted into JSON
+     */
     this.parse = function(){
         
         reader = readline.createInterface({
@@ -46,6 +43,7 @@ function CSVParser(path){
         var keys = [];
         var values = [];
 
+        var output;
         
         // Go through all lines
         reader.on('line', function(line){
@@ -57,18 +55,42 @@ function CSVParser(path){
                 // 
                 keys = line.split(",");
             } else{
-                console.log(line);
+                
                 // Append array from line to end of values.
                 values.push(line.split(","));
+
             }
             
         });
         
-       
-        console.log(values);
+        // Once the reader has gone through all lines and has closed
+        // We will convert it into JSON
+        reader.on('close', function(){
+            
+            // Create container for objects
+            var objectArray = [];
+            
+            // Loop through values
+            for(var i = 0; i < values.length; i++){
+                
+                // Create empty object
+                var object = new Object();
+                
+                // Loop through the arrays within the values array
+                for(var j = 0; j < values[i].length; j++){
+                    
+                    // Set object properties 
+                    object[keys[j]] = values[i][j];
+                }
+                objectArray.push(object);
+            }
+            output = JSON.stringify(objectArray);
+        });
+        
+        return output;
     }
     
 }
 
 var myTest = new CSVParser('testFile.csv');
-myTest.parse();
+console.log(myTest.parse());
