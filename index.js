@@ -6,91 +6,81 @@
  * Created : 18-10-2018 18:23:32
  */
 
+var exports = module.exports = {
+    
 /**
  * 
  * @param {string} path to csv 
  * @returns {CSVParser} returns a CSVParser object
  */
-function CSVParser(path){
+createParser: function(data){
+    
+    
     
     
     // Set path
-    this.path = path;
+    this.data = data;
+    
     
     // Require simple file system, for reading files and such.
     const fs = require('fs');
-    
-    // Require readline, for the fs readstream and also the stdin stream.
-    const readline = require('readline');
-    
+
     /**
-     * 
      * @returns {json} Returns the CSV converted into JSON
      */
     this.parse = function(){
+        var lines;
+        if(fs.existsSync(data)){
+            // If data is a file
+            lines = fs.readFileSync(data, 'utf-8').split('\n').filter(Boolean);
+        } else{
+            // If data is a string
+            lines = data.split('\n');
+        }
         
-        reader = readline.createInterface({
-            // Create readstream with filepath
-           input : fs.createReadStream(path),
-            // Set crlf delay to infinity, so any \r\n will be considered a newline.
-           crlfDelay : Infinity
-        });
-        
-        // Determine whether or not the first line should be treated as keys.
-        var firstLine = true;
         
         // Initialize containers for data.
         var keys = [];
         var values = [];
-
-        var output;
         
-        // Go through all lines
-        reader.on('line', function(line){
-            
-            // If this is the first line, grab these values to use as keys for later.
-            if(firstLine){
-                // Stop the previous condition turning true, so this code wont repeat.
-                firstLine = false;
-                // 
-                keys = line.split(",");
+        for(var i = 0; i < lines.length; i++){
+            // If current iteration is on first line
+            // Set keys to be array from this line
+            if(i === 0){
+                keys = lines[i].split(',');
+                
+            // All other lines should just be made into arrays then appended to values
             } else{
-                
-                // Append array from line to end of values.
-                values.push(line.split(","));
-
+                values.push(lines[i].split(','));
             }
-            
-        });
+        }
         
-        // Once the reader has gone through all lines and has closed
-        // We will convert it into JSON
-        reader.on('close', function(){
+        // Create container for objects
+        var objectArray = [];
+        
+        for(var i = 0; i < values.length; i++){
             
-            // Create container for objects
-            var objectArray = [];
+            // Create empty object
+            var object = {};
             
-            // Loop through values
-            for(var i = 0; i < values.length; i++){
-                
-                // Create empty object
-                var object = new Object();
-                
-                // Loop through the arrays within the values array
-                for(var j = 0; j < values[i].length; j++){
-                    
-                    // Set object properties 
-                    object[keys[j]] = values[i][j];
-                }
-                objectArray.push(object);
+            for(var j = 0; j < values[i].length; j++){
+                // Set object property name to key on index j, and it's value to the value in values on the same index
+                object[keys[j]] = values[i][j];
             }
-            output = JSON.stringify(objectArray);
-        });
+            // Append object to end of container
+            objectArray.push(object);
+        }
         
-        return output;
+        // Return the array in JSON format
+        try{   
+            return JSON.stringify(objectArray);
+        }
+        catch(e){
+            console.log('Error occured : ', e);
+        }
+        
+    };
+            
+    return this;
     }
-    
-}
-
-var myTest = new CSVParser('testFile.csv');
-console.log(myTest.parse());
+};
